@@ -9,15 +9,13 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 
-driver = None
-
 def renew_connection():
     with Controller.from_port(port=9051) as controller:
         controller.authenticate(password="bot")
         controller.signal(Signal.NEWNYM)
         time.sleep(controller.get_newnym_wait())
         
-def click_elemento_aleatorio():
+def click_elemento_aleatorio(driver):
     elementos_sponsored = driver.find_elements(By.CSS_SELECTOR, ".ad-desktop div div")
     if elementos_sponsored:
         elemento = random.choice(elementos_sponsored)
@@ -34,13 +32,12 @@ def click_elemento_aleatorio():
         abas = driver.window_handles
         if len(abas) > 1:
             driver.switch_to.window(abas[1])
-            time.sleep(10)
+            time.sleep(15)
             driver.close()
             abas = driver.window_handles
             driver.switch_to.window(abas[0])
         
 def navigate_and_click(driver):
-    driver = driver
     try:
         driver.get("https://fodaralho.com")
         time.sleep(3)
@@ -63,10 +60,10 @@ def navigate_and_click(driver):
             )
             accept_button.click()
             
-        time.sleep(2)
+        time.sleep(4)
         
         # Clicar em um anuncio na pagina principal
-        click_elemento_aleatorio()
+        click_elemento_aleatorio(driver)
             
         # Entrar em uma categoria aleatoria
         div_categorias = WebDriverWait(driver, 10).until(
@@ -76,24 +73,20 @@ def navigate_and_click(driver):
         links = div_categorias.find_elements(By.TAG_NAME, "a")
         elem = random.choice(links)
         driver.get(elem.get_attribute('href'))
-        time.sleep(2)
+        time.sleep(4)
         
         # Clicar anuncio dentro da categoria
-        click_elemento_aleatorio()
+        click_elemento_aleatorio(driver)
             
         
-        # Entrar em um video aleatorio
-        cards_videos = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.ID, "list-categorias"))
-        )
-        
-        links = cards_videos.find_elements(By.CLASS_NAME, "card")
+        # Entrar em um video aleatorio        
+        links = driver.find_elements(By.CLASS_NAME, "card")
         elem = random.choice(links)
         driver.get(elem.get_attribute('href'))
-        time.sleep(3)
+        time.sleep(4)
         
         # Clicar anuncio dentro do video
-        click_elemento_aleatorio()
+        click_elemento_aleatorio(driver)
         
     except Exception as e:
         print(f"Failed to navigate and click: {e}")
