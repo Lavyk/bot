@@ -1,0 +1,72 @@
+#cloud-config
+autoinstall:
+  version: 1
+  identity:
+    hostname: ubuntu-desktop
+    username: bot  # Substitua pelo seu nome de usuário
+    password: "bot"  # Use uma senha criptografada ou remova para solicitar senha na instalação
+  ssh:
+    install-server: true
+    allow-pw: true
+  packages:
+    - ubuntu-desktop
+    - git
+    - tor
+    - python3
+    - python3-pip
+    - chromium-browser
+    - chromium-chromedriver
+  late-commands:
+    - |
+      # Desativar bloqueio de tela e suspensão automática
+      gsettings set org.gnome.desktop.screensaver lock-enabled false
+      gsettings set org.gnome.desktop.session idle-delay 0
+      gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'nothing'
+      gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-type 'nothing'
+
+      # Instalar pacotes Python necessários
+      pip3 install selenium stem --break-system-packages
+
+      # Clonar o repositório do GitHub
+      git clone https://github.com/lavyk/bot /home/bot/bot
+      cd /home/bot/bot
+
+      # Iniciar o serviço Tor
+      sudo service tor start
+
+      # Gerar a chave hash para a senha 'bot'
+      HASHED_PASSWORD=$(tor --hash-password bot | tail -n 1)
+
+      # Verifica se o comando foi executado com sucesso
+      if [ $? -eq 0 ]; então
+          # Adicionar as configurações ao arquivo torrc
+          echo "ControlPort 9051" | sudo tee -a /etc/tor/torrc > /dev/null
+          echo "CookieAuthentication 1" | sudo tee -a /etc/tor/torrc > /dev/null
+          echo "HashedControlPassword $HASHED_PASSWORD" | sudo tee -a /etc/tor/torrc > /dev/null
+
+          echo "As configurações foram adicionadas ao arquivo /etc/tor/torrc com sucesso."
+      else
+          echo "Falha ao gerar a chave hash."
+          exit 1
+      fi
+
+      # Reiniciar o serviço Tor para aplicar as configurações
+      sudo service tor restart
+  user-data:
+    disable_root: false
+    apt:
+      preserve_sources_list: false
+      primary:
+        - arches: [default]
+          uri: http://archive.ubuntu.com/ubuntu
+      proxy: ""
+    package_update: true
+    package_upgrade: true
+    packages:
+      - ubuntu-desktop
+      - git
+      - tor
+      - python3
+      - python3-pip
+      - chromium-browser
+      - chromium-chromedriver
